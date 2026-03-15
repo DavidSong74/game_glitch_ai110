@@ -1,13 +1,13 @@
 import random
 import streamlit as st
 
-def get_range_for_difficulty(difficulty: str):
-    if difficulty == "Easy":
+def get_range_for_difficulty(level: str):
+    if level == "Easy":
         return 1, 20
-    if difficulty == "Normal":
-        return 1, 100
-    if difficulty == "Hard":
+    if level == "Normal":
         return 1, 50
+    if level == "Hard":
+        return 1, 100
     return 1, 100
 
 
@@ -49,18 +49,8 @@ def check_guess(guess, secret):
 
 def update_score(current_score: int, outcome: str, attempt_number: int):
     if outcome == "Win":
-        points = 100 - 10 * (attempt_number + 1)
-        if points < 10:
-            points = 10
+        points = max(10, 100 - 10 * attempt_number)
         return current_score + points
-
-    if outcome == "Too High":
-        if attempt_number % 2 == 0:
-            return current_score + 5
-        return current_score - 5
-
-    if outcome == "Too Low":
-        return current_score - 5
 
     return current_score
 
@@ -78,8 +68,8 @@ difficulty = st.sidebar.selectbox(
 )
 
 attempt_limit_map = {
-    "Easy": 6,
-    "Normal": 8,
+    "Easy": 10,
+    "Normal": 7,
     "Hard": 5,
 }
 attempt_limit = attempt_limit_map[difficulty]
@@ -93,7 +83,7 @@ if "secret" not in st.session_state:
     st.session_state.secret = random.randint(low, high)
 
 if "attempts" not in st.session_state:
-    st.session_state.attempts = 1
+    st.session_state.attempts = 0
 
 if "score" not in st.session_state:
     st.session_state.score = 0
@@ -104,10 +94,13 @@ if "status" not in st.session_state:
 if "history" not in st.session_state:
     st.session_state.history = []
 
+if "game_count" not in st.session_state:
+    st.session_state.game_count = 0
+
 st.subheader("Make a guess")
 
 st.info(
-    f"Guess a number between 1 and 100. "
+    f"Guess a number between {low} and {high}. "
     f"Attempts left: {attempt_limit - st.session_state.attempts}"
 )
 
@@ -118,14 +111,14 @@ with st.expander("Developer Debug Info"):
     st.write("Difficulty:", difficulty)
     st.write("History:", st.session_state.history)
 
-raw_guess = st.text_input(
-    "Enter your guess:",
-    key=f"guess_input_{difficulty}"
-)
+with st.form("guess_form"):
+    raw_guess = st.text_input(
+        "Enter your guess:",
+        key=f"guess_input_{difficulty}_{st.session_state.game_count}"
+    )
+    submit = st.form_submit_button("Submit Guess 🚀")
 
-col1, col2, col3 = st.columns(3)
-with col1:
-    submit = st.button("Submit Guess 🚀")
+col2, col3 = st.columns(2)
 with col2:
     new_game = st.button("New Game 🔁")
 with col3:
@@ -138,6 +131,7 @@ if new_game:
     st.session_state.status = "playing"
     st.session_state.history = []
     st.session_state.score = 0
+    st.session_state.game_count += 1
     st.success("New game started.")
     st.rerun()
 ## Implemented with AI
@@ -160,23 +154,18 @@ if submit:
     else:
         st.session_state.history.append(guess_int)
 
-        if st.session_state.attempts % 2 == 0:
-            secret = str(st.session_state.secret)
-        else:
-            secret = st.session_state.secret
-
-        outcome, message = check_guess(guess_int, secret)
+        result, message = check_guess(guess_int, st.session_state.secret)
 
         if show_hint:
             st.warning(message)
 
         st.session_state.score = update_score(
             current_score=st.session_state.score,
-            outcome=outcome,
+            outcome=result,
             attempt_number=st.session_state.attempts,
         )
 
-        if outcome == "Win":
+        if result == "Win":
             st.balloons()
             st.session_state.status = "won"
             st.success(
