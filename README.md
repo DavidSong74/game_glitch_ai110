@@ -25,13 +25,26 @@ It wrote the code, ran away, and now the game is unplayable.
 
 ## 📝 Document Your Experience
 
-- [ ] Describe the game's purpose.
-- [ ] Detail which bugs you found.
-- [ ] Explain what fixes you applied.
+**Game's Purpose:**
+A number-guessing game where the player selects a difficulty level and tries to guess a secret number within a limited number of attempts. Hints guide the player higher or lower, and points are awarded for winning — with more points the fewer attempts used.
+
+**Bugs Found:**
+- Difficulty ranges and attempt limits were inverted (Hard was easier than Easy/Normal)
+- Hints ("Go higher/Go lower") flipped on even-numbered attempts because the secret was cast to a string, causing lexicographic string comparison instead of numeric
+- Scoring deducted 5 points per wrong guess, allowing the score to go negative
+- The text input retained its value across new games because the widget key never changed
+- `attempts` was initialized to `1` instead of `0`, causing an off-by-one error in the attempt counter
+
+**Fixes Applied:**
+- Corrected difficulty ranges: Easy (1–20, 10 attempts), Normal (1–50, 7 attempts), Hard (1–100, 5 attempts)
+- Removed the `str()` conversion on even attempts so comparisons remain numeric
+- Removed wrong-guess point deductions so the score can only increase
+- Added a `game_count` counter to the input widget key so it resets as a fresh widget on each new game
+- Initialized `attempts` to `0` consistently across first load and new game resets
 
 ## 📸 Demo
 
-- [ ] [Insert a screenshot of your fixed, winning game here]
+- Dont know how to attach pics
 
 ## 🚀 Stretch Features
 
